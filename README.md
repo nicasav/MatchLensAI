@@ -19,7 +19,7 @@ MatchLens AI is a modular computer vision and video analysis starter repository 
 
 ## Features
 
-- **Detection**: Ultralytics YOLO detects people (`class 0`) and sports ball (`class 32` in COCO).
+- **Detection**: Ultralytics YOLO detects people and sports ball classes (defaults assume COCO mapping: person `0`, sports ball `32`, and can be overridden in config).
 - **Tracking**: YOLO tracking mode (ByteTrack by default) keeps player IDs consistent across frames.
 - **Homography**: OpenCV perspective transform projects player points to a top-down pitch map.
 - **Metrics**: Basic per-player estimates for distance covered and average speed, with placeholders for heatmaps/pass tracking.
@@ -60,6 +60,10 @@ Example config structure:
   "tracker": "bytetrack.yaml",
   "confidence": 0.25,
   "fps": 30.0,
+  "class_ids": {
+    "person": 0,
+    "ball": 32
+  },
   "homography": {
     "src_points": [[100, 200], [900, 200], [1000, 700], [80, 700]],
     "dst_points": [[0, 0], [105, 0], [105, 68], [0, 68]]

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Tuple
 
 
 @dataclass
@@ -21,6 +21,8 @@ class YOLOTracker:
         model_path: str = "yolov8n.pt",
         tracker: str = "bytetrack.yaml",
         conf: float = 0.25,
+        person_class_id: int | None = None,
+        ball_class_id: int | None = None,
     ) -> None:
         try:
             from ultralytics import YOLO
@@ -29,17 +31,34 @@ class YOLOTracker:
         self._model = YOLO(model_path)
         self._tracker = tracker
         self._conf = conf
+        self._person_class_id = self._resolve_class_id(person_class_id, "person", default=0)
+        self._ball_class_id = self._resolve_class_id(ball_class_id, "sports ball", default=32)
+        self._classes = list({self._person_class_id, self._ball_class_id})
 
     def track_frame(self, frame) -> List[TrackedObject]:
         results = self._model.track(
             frame,
             persist=True,
             verbose=False,
-            classes=[0, 32],
+            classes=self._classes,
             conf=self._conf,
             tracker=self._tracker,
         )
         return self._to_tracked_objects(results)
+
+    def _resolve_class_id(self, configured_id: int | None, label: str, default: int) -> int:
+        if configured_id is not None:
+            return int(configured_id)
+        names = self._model.names
+        if isinstance(names, dict):
+            for idx, name in names.items():
+                if str(name).strip().lower() == label:
+                    return int(idx)
+        elif isinstance(names, list):
+            for idx, name in enumerate(names):
+                if str(name).strip().lower() == label:
+                    return int(idx)
+        return default
 
     @staticmethod
     def _to_tracked_objects(results: Iterable) -> List[TrackedObject]:

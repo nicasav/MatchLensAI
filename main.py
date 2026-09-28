@@ -20,11 +20,22 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "tracker": "bytetrack.yaml",
     "confidence": 0.25,
     "fps": 30.0,
+    "class_ids": {"person": 0, "ball": 32},
     "homography": {
         "src_points": [[0, 0], [1, 0], [1, 1], [0, 1]],
         "dst_points": [[0, 0], [105, 0], [105, 68], [0, 68]],
     },
 }
+
+
+def _deep_merge(base: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
+    merged = deepcopy(base)
+    for key, value in overrides.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
 
 
 def load_config(config_path: str | None) -> Dict[str, Any]:
@@ -33,10 +44,7 @@ def load_config(config_path: str | None) -> Dict[str, Any]:
         return cfg
     with open(config_path, "r", encoding="utf-8") as f:
         file_cfg = json.load(f)
-    cfg.update({k: v for k, v in file_cfg.items() if k != "homography"})
-    if "homography" in file_cfg:
-        cfg["homography"] = {**cfg["homography"], **file_cfg["homography"]}
-    return cfg
+    return _deep_merge(cfg, file_cfg)
 
 
 def process_video(video_path: str, output_path: str | None, config: Dict[str, Any]):
@@ -51,6 +59,8 @@ def process_video(video_path: str, output_path: str | None, config: Dict[str, An
         model_path=config["model_path"],
         tracker=config["tracker"],
         conf=float(config["confidence"]),
+        person_class_id=config["class_ids"]["person"],
+        ball_class_id=config["class_ids"]["ball"],
     )
     projector = HomographyProjector(
         src_points=config["homography"]["src_points"],
@@ -60,10 +70,12 @@ def process_video(video_path: str, output_path: str | None, config: Dict[str, An
 
     writer = None
     if output_path:
+        output_file = Path(output_path)
+        output_file.parent.mkdir(parents=True, exist_ok=True)
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        writer = cv2.VideoWriter(output_path, fourcc, effective_fps, (width, height))
+        writer = cv2.VideoWriter(str(output_file), fourcc, effective_fps, (width, height))
         if not writer.isOpened():
             cap.release()
             raise RuntimeError(f"Could not create output video file: {output_path}")
