@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import json
 import math
 from pathlib import Path
@@ -27,7 +28,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
 
 
 def load_config(config_path: str | None) -> Dict[str, Any]:
-    cfg = dict(DEFAULT_CONFIG)
+    cfg = deepcopy(DEFAULT_CONFIG)
     if not config_path:
         return cfg
     with open(config_path, "r", encoding="utf-8") as f:
