@@ -62,6 +62,9 @@ def process_video(video_path: str, output_path: str | None, config: Dict[str, An
         capture_fps = float(cap.get(cv2.CAP_PROP_FPS))
         fps = capture_fps if math.isfinite(capture_fps) and capture_fps > 0 else float(config["fps"])
         writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+        if not writer.isOpened():
+            cap.release()
+            raise RuntimeError(f"Could not create output video file: {output_path}")
 
     while True:
         ok, frame = cap.read()
@@ -98,8 +101,11 @@ def main() -> None:
     args = parse_args()
     config = load_config(args.config)
 
-    if not Path(args.video).exists():
+    video_path = Path(args.video)
+    if not video_path.exists():
         raise FileNotFoundError(f"Input video not found: {args.video}")
+    if not video_path.is_file():
+        raise ValueError(f"Input path is not a file: {args.video}")
 
     metrics_summary = process_video(args.video, args.output, config)
     for track_id, values in metrics_summary.items():

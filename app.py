@@ -18,9 +18,18 @@ if uploaded is not None:
         output_path = Path(tmpdir) / "annotated.mp4"
         input_path.write_bytes(uploaded.read())
 
-        with st.spinner("Processing video..."):
-            summary = process_video(str(input_path), str(output_path), DEFAULT_CONFIG)
-            video_bytes = output_path.read_bytes()
+        try:
+            with st.spinner("Processing video..."):
+                summary = process_video(str(input_path), str(output_path), DEFAULT_CONFIG)
+        except Exception as exc:
+            st.error(f"Processing failed: {exc}")
+            st.stop()
+
+        if not output_path.exists():
+            st.error("Processing completed but no annotated output video was created.")
+            st.stop()
+
+        video_bytes = output_path.read_bytes()
 
         st.success("Processing complete")
         st.video(video_bytes)
