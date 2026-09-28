@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import shutil
 import tempfile
 from uuid import uuid4
@@ -8,6 +9,8 @@ from pathlib import Path
 import streamlit as st
 
 from main import DEFAULT_CONFIG, process_video
+
+LOGGER = logging.getLogger(__name__)
 
 st.set_page_config(page_title="MatchLens AI", layout="wide")
 st.title("MatchLens AI")
@@ -26,8 +29,9 @@ if uploaded is not None:
     try:
         with st.spinner("Processing video..."):
             summary = process_video(str(input_path), str(output_path), DEFAULT_CONFIG)
-    except Exception as exc:
-        st.error(f"Processing failed: {exc}")
+    except Exception:
+        LOGGER.exception("Processing failed for uploaded video")
+        st.error("Processing failed. Please verify the video file and try again.")
         st.stop()
 
     if not output_path.exists():

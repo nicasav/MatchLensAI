@@ -40,6 +40,13 @@ def load_config(config_path: str | None) -> Dict[str, Any]:
 
 
 def process_video(video_path: str, output_path: str | None, config: Dict[str, Any]):
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Could not open video file: {video_path}")
+
+    capture_fps = float(cap.get(cv2.CAP_PROP_FPS))
+    effective_fps = capture_fps if math.isfinite(capture_fps) and capture_fps > 0 else float(config["fps"])
+
     tracker = YOLOTracker(
         model_path=config["model_path"],
         tracker=config["tracker"],
@@ -49,20 +56,14 @@ def process_video(video_path: str, output_path: str | None, config: Dict[str, An
         src_points=config["homography"]["src_points"],
         dst_points=config["homography"]["dst_points"],
     )
-    metrics = PlayerMetricsEngine(fps=float(config["fps"]))
-
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        raise RuntimeError(f"Could not open video file: {video_path}")
+    metrics = PlayerMetricsEngine(fps=effective_fps)
 
     writer = None
     if output_path:
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        capture_fps = float(cap.get(cv2.CAP_PROP_FPS))
-        fps = capture_fps if math.isfinite(capture_fps) and capture_fps > 0 else float(config["fps"])
-        writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+        writer = cv2.VideoWriter(output_path, fourcc, effective_fps, (width, height))
         if not writer.isOpened():
             cap.release()
             raise RuntimeError(f"Could not create output video file: {output_path}")

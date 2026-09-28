@@ -67,6 +67,8 @@ Example config structure:
 }
 ```
 
+Homography note: `src_points` and `dst_points` must be corresponding corners in the same order (for example, clockwise from top-left) for `cv2.getPerspectiveTransform` to produce a correct projection.
+
 ## Running the Streamlit App
 
 ```bash
