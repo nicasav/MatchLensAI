@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any, Dict
 
@@ -58,7 +59,8 @@ def process_video(video_path: str, output_path: str | None, config: Dict[str, An
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = cap.get(cv2.CAP_PROP_FPS) or config["fps"]
+        capture_fps = float(cap.get(cv2.CAP_PROP_FPS))
+        fps = capture_fps if math.isfinite(capture_fps) and capture_fps > 0 else float(config["fps"])
         writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
     while True:

@@ -20,9 +20,10 @@ if uploaded is not None:
 
         with st.spinner("Processing video..."):
             summary = process_video(str(input_path), str(output_path), DEFAULT_CONFIG)
+            video_bytes = output_path.read_bytes()
 
         st.success("Processing complete")
-        st.video(str(output_path))
+        st.video(video_bytes)
         st.subheader("Player Metrics")
         if summary:
             st.json(summary)
